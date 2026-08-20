@@ -1,0 +1,71 @@
+@keyframes kwup {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.kw-app-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: var(--kw-page-ground);
+}
+
+.kw-app-shell {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--kw-bg);
+  color: var(--kw-ink);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 481px) {
+  .kw-app-shell {
+    box-shadow: var(--kw-page-shadow, 0 0 0 1px var(--kw-line2));
+  }
+}
+
+.kw-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kw-toast {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 76px;
+  background: var(--kw-ink);
+  color: var(--kw-bg);
+  padding: 12px 14px;
+  border-radius: var(--kw-radius);
+  font-size: 13px;
+  font-weight: 600;
+  animation: kwup 0.22s ease-out;
+  z-index: 5;
+}
+
+.kw-focus-ring:focus-visible {
+  outline: 2px solid var(--kw-lav);
+  outline-offset: 2px;
+}
+
+.kw-onb-email::placeholder {
+  color: rgba(33, 31, 40, 0.45);
+}
+
+.kw-onb-email:focus-visible {
+  border-color: #211f28;
+}
