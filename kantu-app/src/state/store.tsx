@@ -4,6 +4,7 @@ import { defaultsFor } from './entry';
 import type { EntryType, GlucoseContext, Lang, SymptomTag } from '../i18n/types';
 import { dictionaries } from '../i18n/dict';
 import { meta } from '../i18n/meta';
+import type { WeightUnit } from './weight';
 
 export type Screen = 'onb' | 'home' | 'log' | 'trends' | 'hist' | 'insights' | 'settings' | 'summary';
 
@@ -27,6 +28,7 @@ interface PersistedState {
   email: string;
   name: string;
   range: ChartRange | null;
+  weightUnit: WeightUnit | null;
 }
 
 const STORAGE_KEY = 'kantu:v1';
@@ -65,12 +67,14 @@ export interface KantuState {
   filter: EntryType | 'all';
   metric: EntryType;
   range: ChartRange;
+  weightUnit: WeightUnit;
   now: number;
 
   setLang: (l: Lang) => void;
   setDark: (d: boolean) => void;
   setEmail: (e: string) => void;
   setName: (n: string) => void;
+  setWeightUnit: (u: WeightUnit) => void;
   setAck: (a: boolean | ((prev: boolean) => boolean)) => void;
   setShowDsc: (s: boolean) => void;
   go: (screen: Screen) => void;
@@ -108,6 +112,7 @@ export function KantuProvider({ children }: { children: ReactNode }) {
   const [filter, setFilter] = useState<EntryType | 'all'>('all');
   const [metric, setMetric] = useState<EntryType>('bp');
   const [range, setRange] = useState<ChartRange>(persisted?.range ?? 'week');
+  const [weightUnit, setWeightUnitState] = useState<WeightUnit>(persisted?.weightUnit ?? 'kg');
   const [now, setNow] = useState(init.now);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -117,8 +122,8 @@ export function KantuProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    savePersisted({ entries, lang, dark, onboarded, email, name, range });
-  }, [entries, lang, dark, onboarded, email, name, range]);
+    savePersisted({ entries, lang, dark, onboarded, email, name, range, weightUnit });
+  }, [entries, lang, dark, onboarded, email, name, range, weightUnit]);
 
   const say = useCallback((msg: string) => {
     clearTimeout(toastTimer.current);
@@ -182,6 +187,7 @@ export function KantuProvider({ children }: { children: ReactNode }) {
   const setDark = useCallback((d: boolean) => setDarkState(d), []);
   const setEmail = useCallback((e: string) => setEmailState(e), []);
   const setName = useCallback((n: string) => setNameState(n), []);
+  const setWeightUnit = useCallback((u: WeightUnit) => setWeightUnitState(u), []);
   const setAck = useCallback((a: boolean | ((prev: boolean) => boolean)) => {
     setAckState((prev) => (typeof a === 'function' ? (a as (p: boolean) => boolean)(prev) : a));
   }, []);
@@ -209,11 +215,13 @@ export function KantuProvider({ children }: { children: ReactNode }) {
       filter,
       metric,
       range,
+      weightUnit,
       now,
       setLang,
       setDark,
       setEmail,
       setName,
+      setWeightUnit,
       setAck,
       setShowDsc,
       go,
@@ -244,11 +252,13 @@ export function KantuProvider({ children }: { children: ReactNode }) {
       filter,
       metric,
       range,
+      weightUnit,
       now,
       setLang,
       setDark,
       setEmail,
       setName,
+      setWeightUnit,
       setAck,
       go,
       pickLogType,

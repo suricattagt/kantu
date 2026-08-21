@@ -3,20 +3,24 @@ import { dictionaries } from '../i18n/dict';
 import { ctxWord, meta, moodWord, focusWord, sevWord, tagLabel } from '../i18n/meta';
 import { SYMPTOM_TAGS } from '../state/domain';
 import { chipStyle, segStyle } from '../components/styleHelpers';
+import { kgToLb, lbToKg, type WeightUnit } from '../state/weight';
 import type { GlucoseContext, SymptomTag } from '../i18n/types';
 
 interface FieldSpec {
   label: string;
-  val: number | string | undefined;
+  val: number | undefined;
   unit: string;
+  step: number;
   onMinus: () => void;
   onPlus: () => void;
+  onSet: (v: number | undefined) => void;
+  unitToggle?: { unit: WeightUnit; onSet: (u: WeightUnit) => void };
 }
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 export function LogForm() {
-  const { lang, logType, form, setForm, backToPick, saveEntry } = useKantu();
+  const { lang, logType, form, setForm, backToPick, saveEntry, weightUnit, setWeightUnit } = useKantu();
   const t = dictionaries[lang];
   if (!logType) return null;
   const f = form;
@@ -30,15 +34,66 @@ export function LogForm() {
   let fields: FieldSpec[] = [];
   if (logType === 'bp') {
     fields = [
-      { label: lang === 'es' ? 'SISTÓLICA (ALTA)' : 'SYSTOLIC (UPPER)', val: f.sys, unit: 'mmHg', onMinus: () => bump('sys', -1, 70, 250), onPlus: () => bump('sys', 1, 70, 250) },
-      { label: lang === 'es' ? 'DIASTÓLICA (BAJA)' : 'DIASTOLIC (LOWER)', val: f.dia, unit: 'mmHg', onMinus: () => bump('dia', -1, 40, 160), onPlus: () => bump('dia', 1, 40, 160) },
+      {
+        label: lang === 'es' ? 'SISTÓLICA (ALTA)' : 'SYSTOLIC (UPPER)',
+        val: f.sys,
+        unit: 'mmHg',
+        step: 1,
+        onMinus: () => bump('sys', -1, 70, 250),
+        onPlus: () => bump('sys', 1, 70, 250),
+        onSet: (v) => setForm({ sys: v }),
+      },
+      {
+        label: lang === 'es' ? 'DIASTÓLICA (BAJA)' : 'DIASTOLIC (LOWER)',
+        val: f.dia,
+        unit: 'mmHg',
+        step: 1,
+        onMinus: () => bump('dia', -1, 40, 160),
+        onPlus: () => bump('dia', 1, 40, 160),
+        onSet: (v) => setForm({ dia: v }),
+      },
     ];
   } else if (logType === 'glucose') {
-    fields = [{ label: lang === 'es' ? 'GLUCOSA' : 'GLUCOSE', val: f.n, unit: 'mg/dL', onMinus: () => bump('n', -1, 40, 500), onPlus: () => bump('n', 1, 40, 500) }];
+    fields = [
+      {
+        label: lang === 'es' ? 'GLUCOSA' : 'GLUCOSE',
+        val: f.n,
+        unit: 'mg/dL',
+        step: 1,
+        onMinus: () => bump('n', -1, 40, 500),
+        onPlus: () => bump('n', 1, 40, 500),
+        onSet: (v) => setForm({ n: v }),
+      },
+    ];
   } else if (logType === 'hr') {
-    fields = [{ label: lang === 'es' ? 'PULSO EN REPOSO' : 'RESTING HEART RATE', val: f.n, unit: lang === 'es' ? 'lpm' : 'bpm', onMinus: () => bump('n', -1, 35, 200), onPlus: () => bump('n', 1, 35, 200) }];
+    fields = [
+      {
+        label: lang === 'es' ? 'PULSO EN REPOSO' : 'RESTING HEART RATE',
+        val: f.n,
+        unit: lang === 'es' ? 'lpm' : 'bpm',
+        step: 1,
+        onMinus: () => bump('n', -1, 35, 200),
+        onPlus: () => bump('n', 1, 35, 200),
+        onSet: (v) => setForm({ n: v }),
+      },
+    ];
   } else if (logType === 'weight') {
-    fields = [{ label: lang === 'es' ? 'PESO' : 'WEIGHT', val: f.n ? f.n.toFixed(1) : '', unit: 'kg', onMinus: () => bump('n', -0.1, 25, 250, 1), onPlus: () => bump('n', 0.1, 25, 250, 1) }];
+    // Entries always store weight in kg; the field displays/accepts whichever unit is selected.
+    const toDisplay = (kg: number) => (weightUnit === 'lb' ? kgToLb(kg) : kg);
+    const toKg = (v: number) => (weightUnit === 'lb' ? lbToKg(v) : v);
+    const step = weightUnit === 'lb' ? 0.2 : 0.1;
+    fields = [
+      {
+        label: lang === 'es' ? 'PESO' : 'WEIGHT',
+        val: f.n !== undefined ? Number(toDisplay(f.n).toFixed(1)) : undefined,
+        unit: weightUnit,
+        step,
+        onMinus: () => bump('n', -toKg(step), 25, 250, 2),
+        onPlus: () => bump('n', toKg(step), 25, 250, 2),
+        onSet: (v) => setForm({ n: v === undefined ? undefined : toKg(v) }),
+        unitToggle: { unit: weightUnit, onSet: setWeightUnit },
+      },
+    ];
   }
 
   const hasCtx = logType === 'glucose';
@@ -80,7 +135,18 @@ export function LogForm() {
 
       {fields.map((fd) => (
         <div key={fd.label} style={{ background: 'var(--kw-card)', borderBottom: '2px solid var(--kw-line2)', padding: '14px' }}>
-          <div style={{ fontSize: '9.5px', letterSpacing: '.13em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--kw-mute)' }}>{fd.label}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '9.5px', letterSpacing: '.13em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--kw-mute)' }}>{fd.label}</div>
+            {fd.unitToggle && (
+              <div style={{ display: 'flex', gap: '2px', background: 'var(--kw-line2)' }}>
+                {(['kg', 'lb'] as WeightUnit[]).map((u) => (
+                  <button key={u} onClick={() => fd.unitToggle!.onSet(u)} style={{ ...segStyle(fd.unitToggle!.unit === u), padding: '5px 10px', fontSize: '11px' }}>
+                    {u}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '9px' }}>
             <button
               onClick={fd.onMinus}
@@ -89,9 +155,37 @@ export function LogForm() {
             >
               &#8722;
             </button>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '5px', justifyContent: 'flex-start', paddingLeft: '4px' }}>
-              <div style={{ fontSize: '44px', fontWeight: 800, letterSpacing: '-.045em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{fd.val}</div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--kw-mute)' }}>{fd.unit}</div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '5px', justifyContent: 'flex-start', paddingLeft: '4px', minWidth: 0 }}>
+              <input
+                type="number"
+                inputMode="decimal"
+                step={fd.step}
+                className="kw-num-input"
+                value={fd.val ?? ''}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  fd.onSet(raw === '' ? undefined : Number(raw));
+                }}
+                style={{
+                  // `size` has no effect on type="number" inputs, so width is driven
+                  // by content length directly (ch = width of "0" in the current font).
+                  width: `${Math.max(2, String(fd.val ?? '').length) + 1}ch`,
+                  maxWidth: '100%',
+                  minWidth: 0,
+                  border: 0,
+                  background: 'transparent',
+                  color: 'var(--kw-ink)',
+                  fontFamily: 'Archivo',
+                  fontSize: '44px',
+                  fontWeight: 800,
+                  letterSpacing: '-.045em',
+                  lineHeight: 1,
+                  fontVariantNumeric: 'tabular-nums',
+                  padding: 0,
+                  outline: 'none',
+                }}
+              />
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--kw-mute)', flex: 'none' }}>{fd.unit}</div>
             </div>
             <button
               onClick={fd.onPlus}

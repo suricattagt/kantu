@@ -2,6 +2,7 @@ import type { Entry } from './entry';
 import type { Lang, SymptomTag } from '../i18n/types';
 import { avgOf } from './domain';
 import { meta, tagLabel } from '../i18n/meta';
+import type { WeightUnit } from './weight';
 
 function downloadFile(filename: string, content: BlobPart, mime: string) {
   const blob = new Blob([content], { type: mime });
@@ -24,7 +25,7 @@ const SUMMARY_TYPES = ['bp', 'glucose', 'hr', 'weight', 'mood', 'focus'] as cons
 const PAGE_RIGHT = 548;
 const MARGIN_X = 48;
 
-async function buildSummaryPdf(lang: Lang, entries: Entry[], periodLabel: string): Promise<Blob> {
+async function buildSummaryPdf(lang: Lang, entries: Entry[], periodLabel: string, weightUnit: WeightUnit): Promise<Blob> {
   const { jsPDF } = await import('jspdf');
   const p = (a: string, b: string) => (lang === 'es' ? a : b);
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -60,7 +61,7 @@ async function buildSummaryPdf(lang: Lang, entries: Entry[], periodLabel: string
   doc.setFontSize(12);
   SUMMARY_TYPES.forEach((type) => {
     doc.text(meta(lang, type).full, MARGIN_X, y);
-    doc.text(avgOf(lang, entries, type) || '—', PAGE_RIGHT, y, { align: 'right' });
+    doc.text(avgOf(lang, entries, type, weightUnit) || '—', PAGE_RIGHT, y, { align: 'right' });
     y += 20;
   });
 
@@ -106,9 +107,9 @@ export type SummaryShareOutcome = 'shared' | 'downloaded' | 'cancelled';
 
 /** Builds the doctor summary as a PDF and, on devices that support it, opens the
  * native share sheet (email, WhatsApp, etc.) instead of a silent file download. */
-export async function shareDoctorSummary(lang: Lang, entries: Entry[], periodLabel: string): Promise<SummaryShareOutcome> {
+export async function shareDoctorSummary(lang: Lang, entries: Entry[], periodLabel: string, weightUnit: WeightUnit): Promise<SummaryShareOutcome> {
   const p = (a: string, b: string) => (lang === 'es' ? a : b);
-  const blob = await buildSummaryPdf(lang, entries, periodLabel);
+  const blob = await buildSummaryPdf(lang, entries, periodLabel, weightUnit);
   const stamp = new Date().toISOString().slice(0, 10);
   const filename = `kantu-resumen-${stamp}.pdf`;
   const file = new File([blob], filename, { type: 'application/pdf' });

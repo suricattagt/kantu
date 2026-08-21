@@ -55,7 +55,9 @@ export function Settings() {
 
       <div style={{ padding: '16px 14px 0', fontSize: '11.5px', lineHeight: 1.6, color: 'var(--kw-mute)', textWrap: 'pretty' }}>{t.about}</div>
 
-      <DisclaimerBox heading={t.dscHead} body={t.dscBody} style={{ margin: '14px 14px 100px' }} />
+      <DisclaimerBox heading={t.dscHead} body={t.dscBody} style={{ margin: '14px 14px 20px' }} />
+
+      <div style={{ padding: '0 14px 100px', fontSize: '10.5px', fontWeight: 600, color: 'var(--kw-mute)', textAlign: 'center' }}>{t.credit}</div>
     </>
   );
 }

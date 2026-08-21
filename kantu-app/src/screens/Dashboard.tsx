@@ -5,10 +5,11 @@ import { ctxWord, meta, moodWord, focusWord, when } from '../i18n/meta';
 import { VITAL_TYPES, buildInsights, latest, sorted, spark, status, statusColorVar, valOf } from '../state/domain';
 import { pillStyle } from '../components/styleHelpers';
 import { DisclaimerBox } from '../components/DisclaimerBox';
+import { displayWeight } from '../state/weight';
 import type { VitalType } from '../i18n/types';
 
 export function Dashboard() {
-  const { lang, entries, now, go, setMetric, pickLogType, name } = useKantu();
+  const { lang, entries, now, go, setMetric, pickLogType, name, weightUnit } = useKantu();
   const t = dictionaries[lang];
   const greet = name.trim() ? `${t.greet}, ${name.trim()}` : t.greet;
 
@@ -20,17 +21,22 @@ export function Dashboard() {
         const st = status(lang, type, e);
         const series = sorted(entries, type).slice(-7).map(valOf);
         let value = '—';
+        let unit = m.unit;
         let sub = lang === 'es' ? 'Sin registros' : 'No entries';
         if (e) {
-          value = type === 'bp' ? `${e.v.sys}/${e.v.dia}` : type === 'weight' ? (e.v.n ?? 0).toFixed(1) : String(e.v.n);
+          if (type === 'bp') value = `${e.v.sys}/${e.v.dia}`;
+          else if (type === 'weight') {
+            value = displayWeight(e.v.n ?? 0, weightUnit).toFixed(1);
+            unit = weightUnit;
+          } else value = String(e.v.n);
           sub = when(lang, e.at, now);
           if (type === 'glucose' && e.v.ctx) {
             sub = `${ctxWord(lang, e.v.ctx)} · ${sub}`;
           }
         }
-        return { type, m, value, sub, st, spark: spark(series) };
+        return { type, m, unit, value, sub, st, spark: spark(series) };
       }),
-    [lang, entries, now],
+    [lang, entries, now, weightUnit],
   );
 
   const feelings = useMemo(
@@ -85,7 +91,7 @@ export function Dashboard() {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
               <div style={{ fontSize: '29px', fontWeight: 800, letterSpacing: '-.04em', lineHeight: 0.9 }}>{v.value}</div>
-              <div style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--kw-mute)' }}>{v.m.unit}</div>
+              <div style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--kw-mute)' }}>{v.unit}</div>
             </div>
             <div style={{ width: '100%', height: '22px' }}>
               <svg viewBox="0 0 100 24" preserveAspectRatio="none" style={{ width: '100%', height: '22px', display: 'block', overflow: 'visible' }}>

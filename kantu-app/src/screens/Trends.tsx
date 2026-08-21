@@ -6,10 +6,10 @@ import { TREND_METRICS, chartFor } from '../state/domain';
 import { chipStyle, segStyle } from '../components/styleHelpers';
 
 export function Trends() {
-  const { lang, entries, now, metric, setMetric, range, setRange, go } = useKantu();
+  const { lang, entries, now, metric, setMetric, range, setRange, weightUnit, go } = useKantu();
   const t = dictionaries[lang];
 
-  const chart = useMemo(() => chartFor(lang, entries, now, metric, range), [lang, entries, now, metric, range]);
+  const chart = useMemo(() => chartFor(lang, entries, now, metric, range, weightUnit), [lang, entries, now, metric, range, weightUnit]);
 
   return (
     <>

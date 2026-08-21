@@ -4,13 +4,14 @@ import { dictionaries } from '../i18n/dict';
 import { ctxWord, meta, moodWord, focusWord, sevWord, tagLabel, when } from '../i18n/meta';
 import { FILTER_TYPES, status, statusColorVar } from '../state/domain';
 import { chipStyle } from '../components/styleHelpers';
+import { formatWeight, type WeightUnit } from '../state/weight';
 import type { Entry } from '../state/entry';
 
-function valueLabel(lang: 'es' | 'en', e: Entry): string {
+function valueLabel(lang: 'es' | 'en', e: Entry, weightUnit: WeightUnit): string {
   if (e.type === 'bp') return `${e.v.sys}/${e.v.dia} mmHg`;
   if (e.type === 'glucose') return `${e.v.n} mg/dL · ${ctxWord(lang, e.v.ctx)}`;
   if (e.type === 'hr') return `${e.v.n} ${meta(lang, 'hr').unit}`;
-  if (e.type === 'weight') return `${(e.v.n ?? 0).toFixed(1)} kg`;
+  if (e.type === 'weight') return formatWeight(e.v.n ?? 0, weightUnit);
   if (e.type === 'mood') return `${moodWord(lang, e.v.n ?? 0)} · ${e.v.n}/5`;
   if (e.type === 'focus') return `${focusWord(lang, e.v.n ?? 0)} · ${e.v.n}/5`;
   if (e.type === 'symptom') return `${(e.tags || []).map((tg) => tagLabel(lang, tg)).join(', ')} · ${sevWord(lang, e.sev ?? 1)}`;
@@ -18,7 +19,7 @@ function valueLabel(lang: 'es' | 'en', e: Entry): string {
 }
 
 export function History() {
-  const { lang, entries, now, filter, setFilter, deleteEntry } = useKantu();
+  const { lang, entries, now, filter, setFilter, deleteEntry, weightUnit } = useKantu();
   const t = dictionaries[lang];
 
   const items = useMemo(
@@ -71,7 +72,7 @@ export function History() {
                 <div style={{ fontSize: '14px', fontWeight: 700, letterSpacing: '-.015em' }}>{m.full}</div>
                 <div style={{ fontSize: '10px', color: 'var(--kw-mute)', whiteSpace: 'nowrap', fontWeight: 600 }}>{when(lang, e.at, now)}</div>
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--kw-ink)', marginTop: '3px', fontVariantNumeric: 'tabular-nums' }}>{valueLabel(lang, e)}</div>
+              <div style={{ fontSize: '13px', color: 'var(--kw-ink)', marginTop: '3px', fontVariantNumeric: 'tabular-nums' }}>{valueLabel(lang, e, weightUnit)}</div>
               {e.type !== 'note' && e.note && (
                 <div style={{ fontSize: '11.5px', color: 'var(--kw-mute)', marginTop: '3px', lineHeight: 1.45, textWrap: 'pretty' }}>{e.note}</div>
               )}

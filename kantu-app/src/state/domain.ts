@@ -1,6 +1,7 @@
 import type { Entry } from './entry';
 import type { EntryType, Lang, SymptomTag, VitalType } from '../i18n/types';
 import { meta, tagLabel, when, whenNoTime } from '../i18n/meta';
+import { displayWeight, type WeightUnit } from './weight';
 
 export function sorted(entries: Entry[], type?: EntryType): Entry[] {
   return entries
@@ -99,7 +100,7 @@ const CHART_METRICS: EntryType[] = ['bp', 'glucose', 'hr', 'weight', 'mood', 'fo
 
 export type ChartRange = 'week' | 'month';
 
-export function chartFor(lang: Lang, entries: Entry[], now: number, metric: EntryType, range: ChartRange = 'week'): Chart {
+export function chartFor(lang: Lang, entries: Entry[], now: number, metric: EntryType, range: ChartRange = 'week', weightUnit: WeightUnit = 'kg'): Chart {
   const p = (a: string, b: string) => (lang === 'es' ? a : b);
   const m = meta(lang, metric);
   const s = sorted(entries, metric);
@@ -144,7 +145,7 @@ export function chartFor(lang: Lang, entries: Entry[], now: number, metric: Entr
       : [{ color: 'var(--kw-lav)', label: m.full }];
 
   const avg = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
-  const fmt = (v: number) => (metric === 'weight' ? v.toFixed(1) : String(Math.round(v)));
+  const fmt = (v: number) => (metric === 'weight' ? `${displayWeight(v, weightUnit).toFixed(1)} ${weightUnit}` : String(Math.round(v)));
 
   let stats: ChartStat[];
   if (metric === 'bp') {
@@ -267,14 +268,14 @@ export function buildInsights(lang: Lang, entries: Entry[], now: number): Insigh
   return out;
 }
 
-export function avgOf(lang: Lang, entries: Entry[], type: EntryType): string | null {
+export function avgOf(lang: Lang, entries: Entry[], type: EntryType, weightUnit: WeightUnit = 'kg'): string | null {
   const a = sorted(entries, type);
   if (!a.length) return null;
   if (type === 'bp') {
     return Math.round(a.reduce((x, e) => x + (e.v.sys ?? 0), 0) / a.length) + '/' + Math.round(a.reduce((x, e) => x + (e.v.dia ?? 0), 0) / a.length) + ' mmHg';
   }
   const v = a.reduce((x, e) => x + (e.v.n ?? 0), 0) / a.length;
-  if (type === 'weight') return v.toFixed(1) + ' kg';
+  if (type === 'weight') return `${displayWeight(v, weightUnit).toFixed(1)} ${weightUnit}`;
   if (type === 'mood' || type === 'focus') return v.toFixed(1) + '/5';
   return Math.round(v) + ' ' + meta(lang, type).unit;
 }

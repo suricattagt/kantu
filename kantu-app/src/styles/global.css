@@ -69,3 +69,13 @@
 .kw-onb-email:focus-visible {
   border-color: #211f28;
 }
+
+.kw-num-input {
+  -moz-appearance: textfield;
+}
+
+.kw-num-input::-webkit-outer-spin-button,
+.kw-num-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

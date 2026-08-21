@@ -32,6 +32,7 @@ export interface Dict {
   dataLabel: string;
   export: string;
   about: string;
+  credit: string;
   dscHead: string;
   dscKicker: string;
   dscTo: string;
@@ -99,6 +100,7 @@ export const dictionaries: Record<Lang, Dict> = {
     dataLabel: 'TUS DATOS',
     export: 'Exportar mis registros',
     about: 'Tus registros se guardan solo en este teléfono. Puedes exportarlos o borrarlos cuando quieras.',
+    credit: 'Creado por Suricatta',
     dscHead: 'Esto no es un diagnóstico médico',
     dscKicker: 'ANTES DE ENTRAR — LEE ESTO',
     dscTo: 'Enviaremos una copia de este aviso a',
@@ -166,6 +168,7 @@ export const dictionaries: Record<Lang, Dict> = {
     dataLabel: 'YOUR DATA',
     export: 'Export my entries',
     about: 'Your entries are stored only on this phone. Export or delete them whenever you like.',
+    credit: 'Made by Suricatta',
     dscHead: 'This is not a medical diagnosis',
     dscKicker: 'BEFORE YOU GO IN — READ THIS',
     dscTo: 'We will send a copy of this notice to',

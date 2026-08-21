@@ -9,10 +9,13 @@ import type { SymptomTag } from '../i18n/types';
 const SUMMARY_TYPES = ['bp', 'glucose', 'hr', 'weight', 'mood', 'focus'] as const;
 
 export function Summary() {
-  const { lang, entries, now, say } = useKantu();
+  const { lang, entries, now, say, weightUnit } = useKantu();
   const t = dictionaries[lang];
 
-  const sumRows = useMemo(() => SUMMARY_TYPES.map((k) => ({ k: meta(lang, k).full, v: avgOf(lang, entries, k) || '—' })), [lang, entries]);
+  const sumRows = useMemo(
+    () => SUMMARY_TYPES.map((k) => ({ k: meta(lang, k).full, v: avgOf(lang, entries, k, weightUnit) || '—' })),
+    [lang, entries, weightUnit],
+  );
 
   const sumSymptoms = useMemo(() => {
     const counts: Partial<Record<SymptomTag, number>> = {};
@@ -29,7 +32,7 @@ export function Summary() {
   }, [lang, entries, now]);
 
   const share = async () => {
-    const outcome = await shareDoctorSummary(lang, entries, sumPeriod);
+    const outcome = await shareDoctorSummary(lang, entries, sumPeriod, weightUnit);
     if (outcome === 'shared') say(t.summaryShared);
     else if (outcome === 'downloaded') say(t.summaryDownloaded);
   };
