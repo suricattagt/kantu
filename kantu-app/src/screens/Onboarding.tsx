@@ -1,9 +1,25 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useKantu } from '../state/store';
 import { dictionaries } from '../i18n/dict';
 import { sendDisclaimerEmail } from '../state/api';
+import { BloomGesture } from '../components/BloomGesture';
+import { Toast } from '../components/Toast';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const TOTAL_STEPS = 3;
+
+const ONB_POINTS: Record<'es' | 'en', { n: string; text: string }[]> = {
+  es: [
+    { n: '01', text: 'Presión, glucosa, pulso y peso — en dos toques.' },
+    { n: '02', text: 'Ánimo, memoria y foco cuentan igual que un número.' },
+    { n: '03', text: 'Un resumen claro para llevar a tu próxima cita.' },
+  ],
+  en: [
+    { n: '01', text: 'Blood pressure, glucose, pulse and weight — in two taps.' },
+    { n: '02', text: 'Mood, memory and focus count as much as any number.' },
+    { n: '03', text: 'A clear summary to take to your next appointment.' },
+  ],
+};
 
 function bigLangBtnStyle(active: boolean): CSSProperties {
   return {
@@ -21,24 +37,12 @@ function bigLangBtnStyle(active: boolean): CSSProperties {
   };
 }
 
-export function Onboarding() {
-  const { lang, setLang, name, setName, email, setEmail, showDsc, setShowDsc, say } = useKantu();
-  const t = dictionaries[lang];
-  const nameOk = name.trim().length > 0;
-  const emailOk = EMAIL_RE.test(email.trim());
-  const canContinue = nameOk && emailOk;
-
-  const submitEmail = () => {
-    if (!nameOk) return say(t.nameInvalid);
-    if (!emailOk) return say(t.emailInvalid);
-    setShowDsc(true);
-  };
-
-  const startStyle: CSSProperties = {
+function ctaStyle(enabled: boolean): CSSProperties {
+  return {
     width: '100%',
     border: 0,
-    background: canContinue ? '#fffdfb' : 'rgba(255,253,251,.28)',
-    color: canContinue ? 'var(--kw-lav700)' : 'rgba(255,253,251,.7)',
+    background: enabled ? '#fffdfb' : 'rgba(255,253,251,.28)',
+    color: enabled ? 'var(--kw-lav700)' : 'rgba(255,253,251,.7)',
     fontFamily: 'Archivo',
     fontSize: '15px',
     fontWeight: 700,
@@ -50,96 +54,176 @@ export function Onboarding() {
     justifyContent: 'space-between',
     alignItems: 'center',
   };
+}
 
-  const fieldInputStyle: CSSProperties = {
-    width: '100%',
-    marginTop: '9px',
-    boxSizing: 'border-box',
-    background: '#fffdfb',
-    border: '2px solid transparent',
-    borderRadius: '3px',
-    color: '#211f28',
-    fontFamily: 'Archivo',
-    fontSize: '17px',
-    fontWeight: 600,
-    padding: '12px 14px',
-    outline: 'none',
+const fieldInputStyle: CSSProperties = {
+  width: '100%',
+  marginTop: '9px',
+  boxSizing: 'border-box',
+  background: '#fffdfb',
+  border: '2px solid transparent',
+  borderRadius: '3px',
+  color: '#211f28',
+  fontFamily: 'Archivo',
+  fontSize: '17px',
+  fontWeight: 600,
+  padding: '12px 14px',
+  outline: 'none',
+};
+
+function StepNav({ step, onBack }: { step: number; onBack: () => void }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '18px 16px 0' }}>
+      <div>
+        {step > 0 && (
+          <button
+            onClick={onBack}
+            style={{ border: 0, background: 'transparent', color: '#fffdfb', opacity: 0.85, fontFamily: 'Archivo', fontSize: '13px', fontWeight: 700, cursor: 'pointer', padding: '6px 4px', display: 'flex', alignItems: 'center', gap: '5px' }}
+          >
+            &#8592;
+          </button>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: '6px' }}>
+        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+          <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fffdfb', opacity: i === step ? 1 : i < step ? 0.6 : 0.28 }} />
+        ))}
+      </div>
+      <div />
+    </div>
+  );
+}
+
+export function Onboarding() {
+  const { lang, setLang, name, setName, email, setEmail, showDsc, setShowDsc, say, toast } = useKantu();
+  const t = dictionaries[lang];
+  const [step, setStep] = useState(0);
+  const nameOk = name.trim().length > 0;
+  const emailOk = EMAIL_RE.test(email.trim());
+
+  const next = () => setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1));
+  const back = () => setStep((s) => Math.max(0, s - 1));
+
+  const goToHow = () => {
+    if (!nameOk) return say(t.nameInvalid);
+    next();
+  };
+
+  const submitEmail = () => {
+    if (!emailOk) return say(t.emailInvalid);
+    setShowDsc(true);
   };
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--kw-lav)', color: '#fffdfb', overflow: 'auto' }}>
-      <div style={{ padding: '30px 20px 0' }}>
-        <div style={{ fontSize: '10px', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 700, opacity: 0.75 }}>
-          {t.onbKicker}
-        </div>
-        <div style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 0.94, marginTop: '12px' }}>Kantu</div>
-        <div style={{ height: '2px', background: 'rgba(255,253,251,.5)', margin: '18px 0' }} />
+      <StepNav step={step} onBack={back} />
 
-        <div style={{ fontSize: '10px', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 800, opacity: 0.85, marginBottom: '9px' }}>
-          {t.langLabel}
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setLang('es')} style={bigLangBtnStyle(lang === 'es')}>
-            Español
-          </button>
-          <button onClick={() => setLang('en')} style={bigLangBtnStyle(lang === 'en')}>
-            English
-          </button>
-        </div>
+      {step === 0 && (
+        <>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 24px', textAlign: 'center' }}>
+            <BloomGesture />
+            <div style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-.03em', marginTop: '20px' }}>{t.greetingWord}</div>
+            <div style={{ fontSize: '11px', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 700, opacity: 0.75, marginTop: '8px' }}>Kantu</div>
 
-        <div style={{ fontSize: '15px', fontWeight: 500, lineHeight: 1.35, maxWidth: '320px', textWrap: 'pretty', marginTop: '18px' }}>
-          {t.onbTitle}
-        </div>
-      </div>
+            <div style={{ marginTop: '32px', width: '100%', maxWidth: '320px' }}>
+              <div style={{ fontSize: '10px', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 800, opacity: 0.85, marginBottom: '9px' }}>{t.langLabel}</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => setLang('es')} style={bigLangBtnStyle(lang === 'es')}>
+                  Español
+                </button>
+                <button onClick={() => setLang('en')} style={bigLangBtnStyle(lang === 'en')}>
+                  English
+                </button>
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: '0 20px 26px' }}>
+            <button onClick={next} style={ctaStyle(true)}>
+              <span>{t.continueLabel}</span>
+              <span style={{ fontSize: '18px' }}>&#8594;</span>
+            </button>
+          </div>
+        </>
+      )}
 
-      <div style={{ flex: 1, minHeight: '18px' }} />
+      {step === 1 && (
+        <>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 24px' }}>
+            <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.1, maxWidth: '320px', textWrap: 'pretty' }}>{t.nameStepHead}</div>
+            <div style={{ fontSize: '14px', lineHeight: 1.5, opacity: 0.85, marginTop: '12px', maxWidth: '300px', textWrap: 'pretty' }}>{t.nameStepSub}</div>
 
-      <div style={{ padding: '0 20px' }}>
-        <label htmlFor="kantu-name" style={{ display: 'block', fontSize: '10px', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 800, opacity: 0.85 }}>
-          {t.nameLabel}
-        </label>
-        <input
-          id="kantu-name"
-          type="text"
-          className="kw-onb-email"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={t.namePh}
-          autoComplete="given-name"
-          style={fieldInputStyle}
-        />
-        <div style={{ fontSize: '11px', lineHeight: 1.45, opacity: 0.8, marginTop: '8px', maxWidth: '300px', textWrap: 'pretty' }}>
-          {t.nameHelp}
-        </div>
-      </div>
+            <div style={{ marginTop: '28px' }}>
+              <label htmlFor="kantu-name" style={{ display: 'block', fontSize: '10px', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 800, opacity: 0.85 }}>
+                {t.nameLabel}
+              </label>
+              <input
+                id="kantu-name"
+                type="text"
+                className="kw-onb-email"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t.namePh}
+                autoComplete="given-name"
+                autoFocus
+                style={fieldInputStyle}
+              />
+              <div style={{ fontSize: '11px', lineHeight: 1.45, opacity: 0.8, marginTop: '8px', maxWidth: '300px', textWrap: 'pretty' }}>{t.nameHelp}</div>
+            </div>
+          </div>
+          <div style={{ padding: '0 20px 26px' }}>
+            <button onClick={goToHow} style={ctaStyle(nameOk)}>
+              <span>{t.continueLabel}</span>
+              <span style={{ fontSize: '18px' }}>&#8594;</span>
+            </button>
+          </div>
+        </>
+      )}
 
-      <div style={{ padding: '16px 20px 0' }}>
-        <label htmlFor="kantu-email" style={{ display: 'block', fontSize: '10px', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 800, opacity: 0.85 }}>
-          {t.emailLabel}
-        </label>
-        <input
-          id="kantu-email"
-          type="email"
-          className="kw-onb-email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={t.emailPh}
-          autoComplete="email"
-          style={fieldInputStyle}
-        />
-        <div style={{ fontSize: '11px', lineHeight: 1.45, opacity: 0.8, marginTop: '8px', maxWidth: '300px', textWrap: 'pretty' }}>
-          {t.emailHelp}
-        </div>
-      </div>
+      {step === 2 && (
+        <>
+          <div style={{ padding: '20px 24px 0' }}>
+            <div style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.15, maxWidth: '320px', textWrap: 'pretty' }}>{t.aboutHead}</div>
+            <div style={{ fontSize: '14px', fontWeight: 500, lineHeight: 1.45, maxWidth: '320px', marginTop: '10px', textWrap: 'pretty' }}>{t.onbTitle}</div>
+          </div>
 
-      <div style={{ padding: '18px 20px 22px' }}>
-        <div style={{ fontSize: '11.5px', lineHeight: 1.5, opacity: 0.8, maxWidth: '290px', marginBottom: '14px' }}>{t.onbNote}</div>
-        <button onClick={submitEmail} style={startStyle}>
-          <span>{t.onbStart}</span>
-          <span style={{ fontSize: '18px' }}>&#8594;</span>
-        </button>
-      </div>
+          <div style={{ marginTop: '18px', display: 'grid', gridTemplateColumns: '1fr', gap: '2px', background: 'rgba(255,253,251,.4)' }}>
+            {ONB_POINTS[lang].map((p) => (
+              <div key={p.n} style={{ background: 'var(--kw-lav)', padding: '12px 24px', display: 'flex', gap: '14px', alignItems: 'baseline' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, opacity: 0.7, minWidth: '16px' }}>{p.n}</div>
+                <div style={{ fontSize: '13.5px', lineHeight: 1.45, opacity: 0.95 }}>{p.text}</div>
+              </div>
+            ))}
+          </div>
 
+          <div style={{ padding: '16px 24px 0', fontSize: '12.5px', lineHeight: 1.5, opacity: 0.85, maxWidth: '300px', textWrap: 'pretty' }}>{t.onbNote}</div>
+
+          <div style={{ padding: '18px 24px 0' }}>
+            <label htmlFor="kantu-email" style={{ display: 'block', fontSize: '10px', letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 800, opacity: 0.85 }}>
+              {t.emailLabel}
+            </label>
+            <input
+              id="kantu-email"
+              type="email"
+              className="kw-onb-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t.emailPh}
+              autoComplete="email"
+              style={fieldInputStyle}
+            />
+            <div style={{ fontSize: '11px', lineHeight: 1.45, opacity: 0.8, marginTop: '8px', maxWidth: '300px', textWrap: 'pretty' }}>{t.emailHelp}</div>
+          </div>
+
+          <div style={{ padding: '22px 24px 26px' }}>
+            <button onClick={submitEmail} style={ctaStyle(emailOk)}>
+              <span>{t.onbStart}</span>
+              <span style={{ fontSize: '18px' }}>&#8594;</span>
+            </button>
+          </div>
+        </>
+      )}
+
+      <Toast message={toast} />
       {showDsc && <DisclaimerModal />}
     </div>
   );

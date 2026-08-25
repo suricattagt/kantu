@@ -5,12 +5,16 @@ import { DisclaimerBox } from '../components/DisclaimerBox';
 import { exportEntriesJson } from '../state/exports';
 
 export function Settings() {
-  const { lang, setLang, dark, setDark, entries, say } = useKantu();
+  const { lang, setLang, dark, setDark, entries, say, logOut } = useKantu();
   const t = dictionaries[lang];
 
   const doExport = () => {
     exportEntriesJson(entries);
     say(t.jsonExported);
+  };
+
+  const handleLogOut = () => {
+    if (window.confirm(t.logOutConfirm)) logOut();
   };
 
   return (
@@ -50,6 +54,16 @@ export function Settings() {
             {entries.length}
             {t.entriesSuffix}
           </span>
+        </button>
+      </div>
+
+      <div style={{ background: 'var(--kw-card)', borderBottom: '2px solid var(--kw-line)', padding: '14px' }}>
+        <div style={{ fontSize: '9.5px', letterSpacing: '.13em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--kw-mute)' }}>{t.accountLabel}</div>
+        <button
+          onClick={handleLogOut}
+          style={{ width: '100%', border: '2px solid var(--kw-high)', background: 'transparent', color: 'var(--kw-high)', fontFamily: 'Archivo', fontSize: '14px', fontWeight: 700, textAlign: 'left', padding: '13px 14px', borderRadius: '3px', cursor: 'pointer', marginTop: '10px' }}
+        >
+          {t.logOut}
         </button>
       </div>
 

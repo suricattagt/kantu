@@ -31,6 +31,9 @@ export interface Dict {
   themeLabel: string;
   dataLabel: string;
   export: string;
+  accountLabel: string;
+  logOut: string;
+  logOutConfirm: string;
   about: string;
   credit: string;
   dscHead: string;
@@ -51,6 +54,12 @@ export interface Dict {
   onbTitle: string;
   onbStart: string;
   onbNote: string;
+  greetingWord: string;
+  continueLabel: string;
+  backLabel: string;
+  nameStepHead: string;
+  nameStepSub: string;
+  aboutHead: string;
   savedPrefix: string;
   entryDeleted: string;
   emailInvalid: string;
@@ -99,6 +108,9 @@ export const dictionaries: Record<Lang, Dict> = {
     themeLabel: 'APARIENCIA',
     dataLabel: 'TUS DATOS',
     export: 'Exportar mis registros',
+    accountLabel: 'CUENTA',
+    logOut: 'Cerrar sesión',
+    logOutConfirm: 'Esto borra tu nombre, correo y todos tus registros de este teléfono, y te regresa al inicio. ¿Continuar?',
     about: 'Tus registros se guardan solo en este teléfono. Puedes exportarlos o borrarlos cuando quieras.',
     credit: 'Creado por Suricatta',
     dscHead: 'Esto no es un diagnóstico médico',
@@ -121,6 +133,12 @@ export const dictionaries: Record<Lang, Dict> = {
     onbTitle: 'Lo que anotas hoy es lo que puedes contarle a tu médica mañana.',
     onbStart: 'Empezar',
     onbNote: 'Sin cuentas, sin nube, sin diagnósticos. Solo tú y tus números.',
+    greetingWord: 'Hola',
+    continueLabel: 'Continuar',
+    backLabel: 'Atrás',
+    nameStepHead: '¿Cómo te llamas?',
+    nameStepSub: 'Así Kantu se sentirá más tuyo, desde el saludo hasta tus registros.',
+    aboutHead: 'Kantu es la memoria de tu salud.',
     savedPrefix: 'Guardado — ',
     entryDeleted: 'Registro borrado',
     emailInvalid: 'Escribe un correo válido para continuar.',
@@ -167,6 +185,9 @@ export const dictionaries: Record<Lang, Dict> = {
     themeLabel: 'APPEARANCE',
     dataLabel: 'YOUR DATA',
     export: 'Export my entries',
+    accountLabel: 'ACCOUNT',
+    logOut: 'Log out',
+    logOutConfirm: 'This clears your name, email, and all your entries from this phone, and takes you back to the start. Continue?',
     about: 'Your entries are stored only on this phone. Export or delete them whenever you like.',
     credit: 'Made by Suricatta',
     dscHead: 'This is not a medical diagnosis',
@@ -188,6 +209,12 @@ export const dictionaries: Record<Lang, Dict> = {
     onbTitle: 'What you note today is what you can tell your doctor tomorrow.',
     onbStart: 'Get started',
     onbNote: 'No accounts, no cloud, no diagnoses. Just you and your numbers.',
+    greetingWord: 'Hello',
+    continueLabel: 'Continue',
+    backLabel: 'Back',
+    nameStepHead: "What's your name?",
+    nameStepSub: 'This is how Kantu will feel more like yours, from the greeting to your records.',
+    aboutHead: 'Kantu is the memory of your health.',
     savedPrefix: 'Saved — ',
     entryDeleted: 'Entry deleted',
     emailInvalid: 'Enter a valid email to continue.',

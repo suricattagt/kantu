@@ -21,6 +21,7 @@ export interface FormState {
 export type ChartRange = 'week' | 'month';
 
 interface PersistedState {
+  buildId: string;
   entries: Entry[];
   lang: Lang | null;
   dark: boolean | null;
@@ -33,13 +34,36 @@ interface PersistedState {
 
 const STORAGE_KEY = 'kantu:v1';
 
+/** MVP phase: every new build should force onboarding again, so testers always
+ * see the latest flow instead of resuming a stale local session. */
 function loadPersisted(): PersistedState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as PersistedState;
+    const parsed = JSON.parse(raw) as PersistedState;
+    if (parsed.buildId !== __BUILD_ID__) return null;
+    return parsed;
   } catch {
     return null;
+  }
+}
+
+function clearPersisted() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // storage unavailable — nothing to clear
+  }
+}
+
+/** First-visit default: prefer the browser's language when it's clearly English,
+ * otherwise keep Spanish (the app's default locale). */
+function detectBrowserLang(): Lang {
+  try {
+    const primary = navigator.languages?.[0] ?? navigator.language;
+    return primary?.toLowerCase().startsWith('en') ? 'en' : 'es';
+  } catch {
+    return 'es';
   }
 }
 
@@ -88,6 +112,7 @@ export interface KantuState {
   setRange: (r: ChartRange) => void;
   say: (msg: string) => void;
   completeOnboarding: () => void;
+  logOut: () => void;
 }
 
 const KantuContext = createContext<KantuState | null>(null);
@@ -97,7 +122,7 @@ export function KantuProvider({ children }: { children: ReactNode }) {
   const persisted = init.persisted;
 
   const [entries, setEntries] = useState<Entry[]>(() => persisted?.entries ?? []);
-  const [lang, setLangState] = useState<Lang>(persisted?.lang ?? 'es');
+  const [lang, setLangState] = useState<Lang>(() => persisted?.lang ?? detectBrowserLang());
   const [dark, setDarkState] = useState<boolean>(persisted?.dark ?? false);
   const [onboarded, setOnboarded] = useState<boolean>(persisted?.onboarded ?? false);
   const [email, setEmailState] = useState<string>(persisted?.email ?? '');
@@ -122,7 +147,7 @@ export function KantuProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    savePersisted({ entries, lang, dark, onboarded, email, name, range, weightUnit });
+    savePersisted({ buildId: __BUILD_ID__, entries, lang, dark, onboarded, email, name, range, weightUnit });
   }, [entries, lang, dark, onboarded, email, name, range, weightUnit]);
 
   const say = useCallback((msg: string) => {
@@ -198,6 +223,11 @@ export function KantuProvider({ children }: { children: ReactNode }) {
     setScreen('home');
   }, []);
 
+  const logOut = useCallback(() => {
+    clearPersisted();
+    window.location.reload();
+  }, []);
+
   const value = useMemo<KantuState>(
     () => ({
       lang,
@@ -235,6 +265,7 @@ export function KantuProvider({ children }: { children: ReactNode }) {
       setRange,
       say,
       completeOnboarding,
+      logOut,
     }),
     [
       lang,
@@ -267,6 +298,7 @@ export function KantuProvider({ children }: { children: ReactNode }) {
       saveEntry,
       deleteEntry,
       say,
+      logOut,
       completeOnboarding,
     ],
   );
